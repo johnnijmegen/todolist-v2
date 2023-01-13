@@ -34,10 +34,16 @@ const todo3 = new Item({
 
 const defaultItems = [todo1, todo2, todo3];
 
+const listSchema = new mongoose.Schema({
+  name: String,
+  items: [itemsSchema],
+});
+
+const List = mongoose.model("List", listSchema);
+
 // Inserting the items as default.
 
 // Global variables.
-const items = ["Buy Food", "Cook Food", "Eat Food"];
 const workItems = [];
 
 // Setting get route for home
@@ -60,6 +66,33 @@ app.get("/", function (req, res) {
   });
 });
 
+// Setting Route Parameters for multiple Todo lists.
+app.get("/:customListName", (req, res) => {
+  const customListName = req.params.customListName;
+
+  List.findOne({ name: customListName }, function (err, foundList) {
+    if (!err) {
+      if (!foundList) {
+        // Create new list
+        const list = new List({
+          name: customListName,
+          items: defaultItems,
+        });
+
+        list.save();
+        res.redirect("/" + customListName);
+      } else {
+        // Show existing list
+
+        res.render("list", {
+          listTitle: foundList.name,
+          newListItems: foundList.items,
+        });
+      }
+    }
+  });
+});
+
 // setting post route for home
 app.post("/", function (req, res) {
   const item = req.body.newItem;
@@ -73,14 +106,19 @@ app.post("/", function (req, res) {
   res.redirect("/");
 });
 
-// Setting work route
-app.get("/work", function (req, res) {
-  res.render("list", { listTitle: "Work List", newListItems: workItems });
-});
+// Setting post route for delete
 
-// Setting about route
-app.get("/about", function (req, res) {
-  res.render("about");
+app.post("/delete", function (req, res) {
+  const checkedItemId = req.body.checkbox;
+
+  Item.findByIdAndRemove(checkedItemId, (err, result) => {
+    if (err) {
+      console.log("something went wrong!");
+    } else {
+      console.log("Item deleted!");
+    }
+  });
+  res.redirect("/");
 });
 
 // Startup the server
