@@ -1,48 +1,89 @@
-//jshint esversion:6
-
 const express = require("express");
 const bodyParser = require("body-parser");
-const date = require(__dirname + "/date.js");
+const mongoose = require("mongoose");
 
+// Setting the app.
 const app = express();
 
-app.set('view engine', 'ejs');
+app.set("view engine", "ejs");
 
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
+// Setting the database.
+mongoose.set("strictQuery", true);
+mongoose.connect("mongodb://127.0.0.1:27017/todolistDB");
+
+const itemsSchema = new mongoose.Schema({
+  name: String,
+});
+
+const Item = mongoose.model("Item", itemsSchema);
+
+const todo1 = new Item({
+  name: "Buy Food",
+});
+
+const todo2 = new Item({
+  name: "Eat food ",
+});
+
+const todo3 = new Item({
+  name: "Drink food",
+});
+
+const defaultItems = [todo1, todo2, todo3];
+
+// Inserting the items as default.
+
+// Global variables.
 const items = ["Buy Food", "Cook Food", "Eat Food"];
 const workItems = [];
 
-app.get("/", function(req, res) {
-
-const day = date.getDate();
-
-  res.render("list", {listTitle: day, newListItems: items});
-
+// Setting get route for home
+app.get("/", function (req, res) {
+  // Find all the items in db
+  Item.find({}, (err, foundItems) => {
+    // checks if database has items, if it does do nothing.
+    if (foundItems.length === 0) {
+      Item.insertMany(defaultItems, (err) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("inserted Many Items");
+        }
+      });
+      res.redirect("/");
+    } else {
+      res.render("list", { listTitle: "Today", newListItems: foundItems });
+    }
+  });
 });
 
-app.post("/", function(req, res){
-
+// setting post route for home
+app.post("/", function (req, res) {
   const item = req.body.newItem;
+  // Allows to add new item! to database.
+  const newItem = new Item({
+    name: item,
+  });
 
-  if (req.body.list === "Work") {
-    workItems.push(item);
-    res.redirect("/work");
-  } else {
-    items.push(item);
-    res.redirect("/");
-  }
+  newItem.save();
+
+  res.redirect("/");
 });
 
-app.get("/work", function(req,res){
-  res.render("list", {listTitle: "Work List", newListItems: workItems});
+// Setting work route
+app.get("/work", function (req, res) {
+  res.render("list", { listTitle: "Work List", newListItems: workItems });
 });
 
-app.get("/about", function(req, res){
+// Setting about route
+app.get("/about", function (req, res) {
   res.render("about");
 });
 
-app.listen(3000, function() {
+// Startup the server
+app.listen(3000, function () {
   console.log("Server started on port 3000");
 });
