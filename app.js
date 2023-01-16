@@ -3,6 +3,8 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const _ = require("lodash");
 
+require("dotenv").config();
+
 // Setting the app.
 const app = express();
 
@@ -14,7 +16,7 @@ app.use(express.static("public"));
 // Setting the database.
 mongoose.set("strictQuery", true);
 mongoose.connect(
-  "mongodb+srv://johnnijmegen:<password>@cluster0.wgh3rrm.mongodb.net/?retryWrites=true&w=majority/todolistDB"
+  `mongodb+srv://${process.env.LOGIN_ACCOUNT_DATABASE}@cluster0.wgh3rrm.mongodb.net/todolistDB`
 );
 
 const itemsSchema = new mongoose.Schema({
