@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const _ = require("lodash");
 
 // Setting the app.
 const app = express();
@@ -65,7 +66,8 @@ app.get("/", function (req, res) {
 
 // Setting Route Parameters for multiple Todo lists.
 app.get("/:customListName", (req, res) => {
-  const customListName = req.params.customListName;
+  // Makes sure everything get capatalized.
+  const customListName = _.capitalize(req.params.customListName);
 
   List.findOne({ name: customListName }, function (err, foundList) {
     if (!err) {
@@ -117,15 +119,28 @@ app.post("/", function (req, res) {
 // Setting post route for delete
 app.post("/delete", function (req, res) {
   const checkedItemId = req.body.checkbox;
+  const listName = req.body.listName;
 
-  Item.findByIdAndRemove(checkedItemId, (err, result) => {
-    if (err) {
-      console.log("something went wrong!");
-    } else {
-      console.log("Item deleted!");
-    }
-  });
-  res.redirect("/");
+  // Remove from basic list..
+  if (listName === "Today") {
+    Item.findByIdAndRemove(checkedItemId, (err, result) => {
+      if (!err) {
+        console.log("Item deleted");
+        res.redirect("/");
+      }
+    });
+  } else {
+    //remove from specified list.
+    List.findOneAndUpdate(
+      { name: listName },
+      { $pull: { items: { _id: checkedItemId } } },
+      function (err, foundList) {
+        if (!err) {
+          res.redirect("/" + listName);
+        }
+      }
+    );
+  }
 });
 
 // Startup the server
