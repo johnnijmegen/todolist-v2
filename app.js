@@ -13,7 +13,9 @@ app.use(express.static("public"));
 
 // Setting the database.
 mongoose.set("strictQuery", true);
-mongoose.connect("mongodb://127.0.0.1:27017/todolistDB");
+mongoose.connect(
+  "mongodb+srv://johnnijmegen:<password>@cluster0.wgh3rrm.mongodb.net/?retryWrites=true&w=majority/todolistDB"
+);
 
 const itemsSchema = new mongoose.Schema({
   name: String,
