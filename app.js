@@ -43,9 +43,6 @@ const List = mongoose.model("List", listSchema);
 
 // Inserting the items as default.
 
-// Global variables.
-const workItems = [];
-
 // Setting get route for home
 app.get("/", function (req, res) {
   // Find all the items in db
@@ -95,19 +92,29 @@ app.get("/:customListName", (req, res) => {
 
 // setting post route for home
 app.post("/", function (req, res) {
-  const item = req.body.newItem;
+  const itemName = req.body.newItem;
+  const listName = req.body.list;
+
   // Allows to add new item! to database.
-  const newItem = new Item({
-    name: item,
+  const item = new Item({
+    name: itemName,
   });
 
-  newItem.save();
-
-  res.redirect("/");
+  // Adding new items to db
+  if (listName === "Today") {
+    item.save();
+    res.redirect("/");
+  } else {
+    // checks if there's not the basic list then adds to the custom list specified in list.ejs
+    List.findOne({ name: listName }, function (err, foundList) {
+      foundList.items.push(item);
+      foundList.save();
+      res.redirect("/" + listName);
+    });
+  }
 });
 
 // Setting post route for delete
-
 app.post("/delete", function (req, res) {
   const checkedItemId = req.body.checkbox;
 
